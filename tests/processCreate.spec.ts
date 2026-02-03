@@ -1,5 +1,6 @@
 import { Page } from "@playwright/test";
 import { test, expect } from "../fixtures/uiFixtures";
+import { ProcessCreatePage } from "../pages/ProcessCreatePage";
 
 test.describe("Process creation flow", () => {
   test("Create process - step by step", async ({
@@ -9,11 +10,11 @@ test.describe("Process creation flow", () => {
   }) => {
     let designerPage: Page;
     let processName: string;
+    let processDesignPage: ProcessCreatePage;
 
     await authAsDefaultUser();
 
     await test.step("Open Processes from sidebar", async () => {
-      await mainPage.sidebar.processesLink.isVisible();
       await mainPage.sidebar.processesLink.click();
       await expect(mainPage.page).toHaveURL(/processDashboard/);
     });
@@ -25,49 +26,39 @@ test.describe("Process creation flow", () => {
         manageProcessesPage.createProcessBtn.click(),
       ]);
 
+      await designerPage.bringToFront();
+      processDesignPage = new ProcessCreatePage(designerPage);
+
       await designerPage.waitForLoadState("domcontentloaded");
       await expect(designerPage).toHaveURL(/processDesigner/);
-      await expect(designerPage.getByTestId("txt-processName")).toBeVisible();
+      await expect(processDesignPage.userNameInput).toBeVisible();
     });
 
     await test.step("Step 3: Set process name", async () => {
       processName = `test-${Date.now()}`;
 
-      const nameInput = designerPage.getByTestId("txt-processName");
-      await expect(nameInput).toBeVisible();
-
-      await nameInput.fill(processName);
-      await nameInput.press("Enter");
-      await expect(nameInput).toHaveValue(processName);
+      await processDesignPage.userNameInput.fill(processName);
+      await processDesignPage.userNameInput.press("Enter");
+      await expect(processDesignPage.userNameInput).toHaveValue(processName);
     });
 
     await test.step('Step 4: Add "Process start" node to canvas', async () => {
-      const actionsBtn = designerPage.getByTestId("pdActions-click");
-      await expect(actionsBtn).toBeVisible();
-      await actionsBtn.click();
+      await processDesignPage.actionsBtn.click();
+      await expect(processDesignPage.processStartItem).toBeVisible();
 
-      const processStartItem = designerPage.getByTestId("pd-actions-11");
-      await expect(processStartItem).toBeVisible();
+      await expect(processDesignPage.emptyDropTarget).toBeVisible();
+      await processDesignPage.processStartItem.dragTo(
+        processDesignPage.emptyDropTarget,
+      );
 
-      const emptyDropTarget = designerPage.getByTestId("pdEmpty-createAction");
-      await expect(emptyDropTarget).toBeVisible();
-      await processStartItem.dragTo(emptyDropTarget);
-
-      await expect(emptyDropTarget).toBeHidden({ timeout: 15000 });
+      await expect(processDesignPage.emptyDropTarget).toBeHidden({
+        timeout: 15000,
+      });
     });
 
     await test.step("Step 5: Close Actions panel and save process", async () => {
-      const closeActionsBtn = designerPage.locator(
-        '//*[contains(@class, "ms-Panel-closeButton")]',
-      );
-      await expect(closeActionsBtn).toBeVisible();
-      await closeActionsBtn.click();
-
-      const saveBtn = designerPage.getByTestId("pdSave-click");
-      await expect(saveBtn).toBeVisible();
-      await saveBtn.click();
-
-      await designerPage.waitForTimeout(1000);
+      await processDesignPage.closeActionsBtn.click();
+      await processDesignPage.saveBtn.click();
     });
 
     await test.step("Step 6: Verify process number is assigned", async () => {
@@ -82,16 +73,10 @@ test.describe("Process creation flow", () => {
         })
         .toMatch(expectedTitlePattern);
 
-      const nameInput = designerPage.getByTestId("txt-processName");
-      await expect(nameInput).toBeVisible();
-      await expect(nameInput).toHaveValue(processName);
-
-      const paperCanvas = designerPage.locator(
-        ".linqi-graph-panZoomablePaperCanvas",
-      );
-      const nodes = paperCanvas.locator(".linqi-graph-nodeContainer");
-      await expect(paperCanvas).toHaveCount(1);
-      await expect(nodes).toHaveCount(1);
+      await expect(processDesignPage.userNameInput).toBeVisible();
+      await expect(processDesignPage.userNameInput).toHaveValue(processName);
+      await expect(processDesignPage.paperCanvas).toHaveCount(1);
+      await expect(processDesignPage.nodes).toHaveCount(1);
     });
   });
 });
