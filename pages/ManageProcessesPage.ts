@@ -9,4 +9,15 @@ export class ManageProcessesPage {
 
     this.createProcessBtn = page.getByTestId("processList-addProcess-click");
   }
+
+  async openDesignerInNewTab(): Promise<Page> {
+    const [designerPage] = await Promise.all([
+      this.page.context().waitForEvent("page"),
+      this.createProcessBtn.click(),
+    ]);
+
+    await designerPage.bringToFront();
+    await designerPage.waitForLoadState("domcontentloaded");
+    return designerPage;
+  }
 }

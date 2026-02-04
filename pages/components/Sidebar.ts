@@ -9,4 +9,8 @@ export class Sidebar {
 
     this.processesLink = page.getByTestId("mainNav-Prozess-Dashboard");
   }
+
+  async openProcesses() {
+    await this.processesLink.click();
+  }
 }

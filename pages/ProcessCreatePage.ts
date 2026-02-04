@@ -9,7 +9,7 @@ export class ProcessCreatePage {
   public closeActionsBtn: Locator;
   public saveBtn: Locator;
   public paperCanvas: Locator;
-  public nodes: Locator;
+  public droppedNode: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -23,6 +23,27 @@ export class ProcessCreatePage {
     );
     this.saveBtn = page.getByTestId("pdSave-click");
     this.paperCanvas = page.locator(".linqi-graph-panZoomablePaperCanvas");
-    this.nodes = this.paperCanvas.locator(".linqi-graph-nodeContainer");
+    this.droppedNode = this.paperCanvas.locator(".linqi-graph-nodeContainer");
+  }
+
+  async setProcessName(name: string) {
+    await this.userNameInput.fill(name);
+    await this.userNameInput.press("Enter");
+  }
+
+  async openActions() {
+    await this.actionsBtn.click();
+  }
+
+  async addProcessStartNode() {
+    await this.processStartItem.dragTo(this.emptyDropTarget);
+  }
+
+  async save() {
+    await this.saveBtn.click();
+  }
+
+  async closeActions() {
+    await this.closeActionsBtn.click();
   }
 }
